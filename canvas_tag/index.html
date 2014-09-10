@@ -15,6 +15,7 @@ canvas{position:absolute;top:0;left:0;}
 <div class="top">
 	<input id="inputelem">
     <span class="btn" onclick="addTag()">添加</span>
+    <span class="btn" onclick="createImg()">生成图片</span>
     <span id="calwidth" style="visibility:hidden" class="calwidth"></span>
 </div>
 <div style="position:relative;">
@@ -35,7 +36,7 @@ canvas{position:absolute;top:0;left:0;}
     var _isMouseDown = false;
 	var _file = document.getElementById("fileinput");
     var _tagAry = [];
-    var _index = 0;
+    var _index = 1;
     var _curIndex = 0;
 
     _file.onchange = function(e) {
@@ -91,7 +92,7 @@ canvas{position:absolute;top:0;left:0;}
 
         _newcanvas.width = imagew||500;
         _newcanvas.height = imageh||780;
-        _newcanvas.style.zIndex = 1;
+        _newcanvas.style.zIndex = _index;
 
         _warpbox.appendChild(_newcanvas);
 
@@ -194,6 +195,42 @@ canvas{position:absolute;top:0;left:0;}
     _warpbox.addEventListener('mousedown', mouseDown, false);
     _warpbox.addEventListener('mousemove', mouseMove, false);
     _warpbox.addEventListener('mouseup', mouseUp, false);
+    
+    function createImg() {
+    	var _newcanvas = document.createElement('canvas')
+        var _cxt = _newcanvas.getContext("2d");
+
+        _newcanvas.width = imagew||500;
+        _newcanvas.height = imageh||780;
+        _newcanvas.style.zIndex = _index;
+
+        _warpbox.appendChild(_newcanvas);
+        
+        _cxt.drawImage(showimage, 0, 0, imagew, imageh);
+        var _obj, _x, _y, _width;
+        for(var i=0,l=_tagAry.length; i<l; i++) {
+        	_obj = _tagAry[i];
+        	_x = _obj.posx;
+        	_y = _obj.posy;
+        	_width = _obj.width;
+        	
+            _cxt.beginPath();
+            _cxt.fillStyle = "#a2a2a2";
+            _cxt.moveTo(20+_x,0+_y);
+            _cxt.lineTo(_width+_x,0+_y);
+            _cxt.lineTo(_width+_x,40+_y);
+            _cxt.lineTo(20+_x,40+_y);
+            _cxt.lineTo(0+_x,20+_y);
+            _cxt.closePath();
+            _cxt.stroke();
+            _cxt.fill();
+
+            _cxt.fillStyle = "#fff";
+            _cxt.font = "18px Arial"
+            _cxt.textBaseline = "middle"
+            _cxt.fillText(_obj.text, 20+_x,20+_y);
+        }
+    }
 
 </script>
 </html>
