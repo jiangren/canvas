@@ -1,0 +1,199 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+<title></title> 
+<meta charset="UTF-8" >
+<style type="text/css">
+.top input{width:100px;height:20px;line-height:20px;font-size:18px;margin-bottom:20px;}
+.top .btn{display: inline-block;margin-left: 40px;}
+.top .calwidth{display:inline-block;line-height:20px;font-size:18px;font-family:Arial;}
+canvas{position:absolute;top:0;left:0;}
+</style>
+
+</head>
+<body>
+<div class="top">
+	<input id="inputelem">
+    <span class="btn" onclick="addTag()">添加</span>
+    <span id="calwidth" style="visibility:hidden" class="calwidth"></span>
+</div>
+<div style="position:relative;">
+    <img id="bgimg"/>
+</div>
+<input id="fileinput" type="file">
+</body>
+<script type="text/javascript">
+	//var c=document.getElementById("myCanvas");
+	//var cxt=c.getContext("2d");
+    var _bgImg = document.getElementById('bgimg');
+    var _warpbox = _bgImg.parentNode;
+	var showimage, imagew, imageh, canvas;
+    var tag = {posx:0,posy:0,index:0,width:0};
+    var input = document.getElementById('inputelem');
+    var addBtn = document.getElementById('btn');
+    var hiddenSpan = document.getElementById('calwidth');
+    var _isMouseDown = false;
+	var _file = document.getElementById("fileinput");
+    var _tagAry = [];
+    var _index = 0;
+    var _curIndex = 0;
+
+    _file.onchange = function(e) {
+        var files = e.target.files || e.dataTransfer.files;
+
+        if (files.length > 0) {
+            hasfile=true;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                setImage(e.target.result);
+            };
+            reader.readAsDataURL(files[0]);
+        }
+    }
+
+    function setImage(url) {
+        //var _a = document.createElement("img");
+        _bgImg.onload = setCanvas;
+        _bgImg.src = url;
+    }
+
+    function setCanvas() {
+        var image = this,_w = image.width, _h=image.height, _x = 0, _y = 0, _cw = _w, _ch = _h;
+
+        canvas = document.createElement('canvas');
+        canvas.width = _w;
+        canvas.height = _h;
+
+        _warpbox.style.width = _w+'px';
+        _warpbox.style.height = _h+'px';
+
+        _warpbox.appendChild(canvas);
+
+        //cxt.drawImage(image, 0, 0, _w, _h, 0, 0, _cw, _ch);
+
+        showimage = image;
+        imagew = _cw;
+        imageh = _ch;
+    }
+
+    function addTag() {
+
+        var _string = input.value;
+        hiddenSpan.innerText = _string;
+        var _width = hiddenSpan.clientWidth;
+
+        drawTag(_string,_width+25);
+    }
+
+    function drawTag(_string,_width,_offset) {
+        var _newcanvas = document.createElement('canvas')
+        var _cxt = _newcanvas.getContext("2d");
+
+        _newcanvas.width = imagew||500;
+        _newcanvas.height = imageh||780;
+        _newcanvas.style.zIndex = 1;
+
+        _warpbox.appendChild(_newcanvas);
+
+        _cxt.beginPath();
+        _cxt.fillStyle = "#a2a2a2";
+        _cxt.moveTo(20,0);
+        _cxt.lineTo(_width,0);
+        _cxt.lineTo(_width,40);
+        _cxt.lineTo(20,40);
+        _cxt.lineTo(0,20);
+        _cxt.closePath();
+        _cxt.stroke();
+        _cxt.fill();
+
+        _cxt.fillStyle = "#fff";
+        _cxt.font = "18px Arial"
+        _cxt.textBaseline = "middle"
+        _cxt.fillText(_string, 20,20);
+
+        var _obj = {canvas:_newcanvas,
+                    cxt:_cxt,
+                    text:_string,
+                    width:_width,
+                    posx:0,
+                    posy:0,
+                    index:_index};
+        _tagAry.push(_obj);
+		_index ++;
+    }
+
+
+    function mouseDown(_event) {
+        // alert(1);
+        _isMouseDown = true;
+        _x = _event.clientX;
+        _y = _event.clientY;
+        
+        var _bounding = _bgImg.getBoundingClientRect();
+        var _xt = _x - _bounding.left;
+        var _yt = _y - _bounding.top;
+        
+        var _tag;
+    	for(var i=_tagAry.length; i>0; i--) {
+    		_tag = _tagAry[i-1];
+    		if(_xt >= _tag.posx && _xt <= (_tag.posx + _tag.width) && _yt >= _tag.posy && _yt <= (_tag.posy + 40)) {
+    			_curIndex = i-1;
+    			break;
+    		}
+    	}
+        
+    };
+
+    function mouseMove(_event) {
+        if(!_isMouseDown || !_tagAry[_curIndex]) return;
+
+        var _cx = _event.clientX, _cy = _event.clientY,
+            _disx = _cx - _x, _disy = _cy - _y;
+        if(Math.abs(_disx) > 4 || Math.abs(_disy) > 4) {
+            movetag(_disx,_disy,_cx,_cy);
+        }
+    }
+
+    function mouseUp(_event) {
+    	if(!_isMouseDown || !_tagAry[_curIndex]) return;
+    	
+        _isMouseDown = false;
+        var _cx = _event.clientX, _cy = _event.clientY,
+            _disx = _cx - _x, _disy = _cy - _y;
+		console.log(_curIndex);
+        _tagAry[_curIndex].posx += _disx;
+        _tagAry[_curIndex].posy += _disy;
+        _curIndex = -1;
+    }
+
+    function movetag(_x, _y,_cx,_cy) {
+        var _obj = _tagAry[_curIndex];
+        var _cxt = _obj.cxt,_width = _obj.width;
+        _x = _x+_obj.posx;
+        _y = _y+_obj.posy;
+
+        _cxt.clearRect(0,0,imagew,imageh);
+        _cxt.beginPath();
+        _cxt.fillStyle = "#a2a2a2";
+        _cxt.moveTo(20+_x,0+_y);
+        _cxt.lineTo(_width+_x,0+_y);
+        _cxt.lineTo(_width+_x,40+_y);
+        _cxt.lineTo(20+_x,40+_y);
+        _cxt.lineTo(0+_x,20+_y);
+        _cxt.closePath();
+        _cxt.stroke();
+        _cxt.fill();
+
+        _cxt.fillStyle = "#fff";
+        _cxt.font = "18px Arial"
+        _cxt.textBaseline = "middle"
+        _cxt.fillText(_obj.text, 20+_x,20+_y);
+
+    }
+
+    _warpbox.addEventListener('mousedown', mouseDown, false);
+    _warpbox.addEventListener('mousemove', mouseMove, false);
+    _warpbox.addEventListener('mouseup', mouseUp, false);
+
+</script>
+</html>
