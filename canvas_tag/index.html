@@ -161,7 +161,7 @@ canvas{position:absolute;top:0;left:0;}
         _isMouseDown = false;
         var _cx = _event.clientX, _cy = _event.clientY,
             _disx = _cx - _x, _disy = _cy - _y;
-		console.log(_curIndex);
+
         _tagAry[_curIndex].posx += _disx;
         _tagAry[_curIndex].posy += _disy;
         _curIndex = -1;
@@ -204,7 +204,7 @@ canvas{position:absolute;top:0;left:0;}
         _newcanvas.height = imageh||780;
         _newcanvas.style.zIndex = _index;
 
-        _warpbox.appendChild(_newcanvas);
+        //_warpbox.appendChild(_newcanvas);
         
         _cxt.drawImage(showimage, 0, 0, imagew, imageh);
         var _obj, _x, _y, _width;
@@ -230,7 +230,47 @@ canvas{position:absolute;top:0;left:0;}
             _cxt.textBaseline = "middle"
             _cxt.fillText(_obj.text, 20+_x,20+_y);
         }
+        
+        var _imgData = dataURItoBlob(_newcanvas.toDataURL("image/png"));
+        
+        _imgData.name = "merge";
+        saveAs(_imgData, "merge.png");
+        
     }
-
+    
+    function dataURItoBlob(dataURL) {
+        var BASE64_MARKER = ';base64,';
+        if (dataURL.indexOf(BASE64_MARKER) === -1) {
+            var parts = dataURL.split(',');
+            var contentType = parts[0].split(':')[1];
+            var raw = parts[1];
+            return new Blob([raw], {type: contentType});
+        }
+        var parts = dataURL.split(BASE64_MARKER);
+        var contentType = parts[0].split(':')[1];
+        var byteString = atob(parts[1]);
+        var ab = new ArrayBuffer(byteString.length);
+        var ia = new Uint8Array(ab);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], {type: contentType});
+    }
+	
+    function saveAs(blob, filename) {
+    	var type = blob.type;
+        var force_saveable_type = 'application/octet-stream';
+        if (type && type !== force_saveable_type) {
+            var slice = blob.slice || blob.webkitSlice || blob.mozSlice;
+            blob = slice.call(blob, 0, blob.size, force_saveable_type);
+        }
+        var url = URL.createObjectURL(blob);
+        var save_link = document.createElement('a');
+        save_link.href = url;
+        save_link.download = filename;
+        var event = document.createEvent('MouseEvents');
+        event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        save_link.dispatchEvent(event);
+    }
 </script>
 </html>
